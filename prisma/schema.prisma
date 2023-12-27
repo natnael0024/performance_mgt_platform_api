@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model companies {
+  id           Int            @id @default(autoincrement())
+  company_name String         @db.VarChar(255)
+  moto         String?        @db.VarChar(255)
+  logo         String?        @db.VarChar(255)
+  directions   directions[]
+  subscription subscription[]
+  teams        teams[]
+  users        users[]
+}
+
+model directions {
+  id         Int       @id @default(autoincrement())
+  company_id Int
+  ceo_id     Int
+  team_id    Int
+  title      String    @db.VarChar(255)
+  details    String    @db.VarChar(1000)
+  users      users     @relation(fields: [ceo_id], references: [id], onUpdate: Restrict, map: "fk_direction_ceo")
+  companies  companies @relation(fields: [company_id], references: [id], onUpdate: Restrict, map: "fk_direction_company")
+  teams      teams     @relation(fields: [team_id], references: [id], onUpdate: Restrict, map: "fk_direction_team")
+
+  @@index([ceo_id], map: "fk_direction_ceo")
+  @@index([company_id], map: "fk_direction_company")
+  @@index([team_id], map: "fk_direction_team")
+}
+
+model feedbacks {
+  id                                Int     @id @default(autoincrement())
+  manager_id                        Int
+  member_id                         Int
+  target_id                         Int
+  feedback_text                     String  @db.VarChar(500)
+  users_feedbacks_manager_idTousers users   @relation("feedbacks_manager_idTousers", fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_feedback_manager")
+  users_feedbacks_member_idTousers  users   @relation("feedbacks_member_idTousers", fields: [member_id], references: [id], onUpdate: Restrict, map: "fk_feedback_member")
+  targets                           targets @relation(fields: [target_id], references: [id], onUpdate: Restrict, map: "fk_feedback_target")
+
+  @@index([manager_id], map: "idx_feedbacks_manager_id")
+  @@index([member_id], map: "idx_feedbacks_member_id")
+  @@index([target_id], map: "idx_feedbacks_target_id")
+}
+
+model levels {
+  id           Int    @id @default(autoincrement())
+  level_name   String @db.VarChar(100)
+  xp_threshold Int
+}
+
+model permissions {
+  id              Int               @id @default(autoincrement())
+  permission_name String            @db.VarChar(255)
+  description     String?           @db.VarChar(255)
+  role_permission role_permission[]
+}
+
+model progresses {
+  id             Int     @id @default(autoincrement())
+  target_id      Int
+  progress_value Int?    @default(0)
+  targets        targets @relation(fields: [target_id], references: [id], onUpdate: Restrict, map: "fk_progress_target")
+
+  @@index([target_id], map: "idx_progresses_target_id")
+}
+
+model role_permission {
+  id            Int          @id @default(autoincrement())
+  role_id       Int?
+  permission_id Int?
+  roles         roles?       @relation(fields: [role_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "role_permission_ibfk_1")
+  permissions   permissions? @relation(fields: [permission_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "role_permission_ibfk_2")
+
+  @@index([permission_id], map: "permission_id")
+  @@index([role_id], map: "role_id")
+}
+
+model roles {
+  id              Int               @id @default(autoincrement())
+  role_name       String            @db.VarChar(255)
+  description     String?           @db.VarChar(255)
+  role_permission role_permission[]
+}
+
+model subscription {
+  id         Int       @id @default(autoincrement())
+  company_id Int
+  start_date DateTime  @db.Date
+  end_date   DateTime  @db.Date
+  status     Boolean?  @default(false)
+  companies  companies @relation(fields: [company_id], references: [id], onUpdate: Restrict, map: "fk_subscription_company")
+
+  @@index([company_id], map: "idx_subscription_company_id")
+}
+
+model targets {
+  id                              Int          @id @default(autoincrement())
+  manager_id                      Int
+  member_id                       Int
+  target_description              String       @db.VarChar(1000)
+  duration                        Int
+  status                          Boolean?     @default(false)
+  feedbacks                       feedbacks[]
+  progresses                      progresses[]
+  users_targets_manager_idTousers users        @relation("targets_manager_idTousers", fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_target_manager")
+  users_targets_member_idTousers  users        @relation("targets_member_idTousers", fields: [member_id], references: [id], onUpdate: Restrict, map: "fk_target_member")
+
+  @@index([manager_id], map: "idx_targets_manager_id")
+  @@index([member_id], map: "idx_targets_member_id")
+}
+
+model teams {
+  id               Int          @id @default(autoincrement())
+  company_id       Int
+  manager_id       Int
+  team_name        String       @db.VarChar(255)
+  team_description String?      @db.VarChar(255)
+  directions       directions[]
+  companies        companies    @relation(fields: [company_id], references: [id], onUpdate: Restrict, map: "fk_team_company")
+  users            users        @relation(fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_team_manager")
+
+  @@index([company_id], map: "idx_teams_company_id")
+  @@index([manager_id], map: "idx_teams_manager_id")
+}
+
+model users {
+  id                                    Int          @id @default(autoincrement())
+  company_id                            Int?
+  first_name                            String?      @db.VarChar(255)
+  last_name                             String?      @db.VarChar(255)
+  email                                 String?      @db.VarChar(255)
+  password                              String?      @db.VarChar(255)
+  role_id                               Int
+  team_id                               Int?
+  level_id                              Int?         @default(1)
+  xp                                    Int?         @default(0)
+  image                                 String?      @db.VarChar(255)
+  directions                            directions[]
+  feedbacks_feedbacks_manager_idTousers feedbacks[]  @relation("feedbacks_manager_idTousers")
+  feedbacks_feedbacks_member_idTousers  feedbacks[]  @relation("feedbacks_member_idTousers")
+  targets_targets_manager_idTousers     targets[]    @relation("targets_manager_idTousers")
+  targets_targets_member_idTousers      targets[]    @relation("targets_member_idTousers")
+  teams                                 teams[]
+  companies                             companies?   @relation(fields: [company_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_users_company")
+
+  @@index([company_id], map: "idx_users_company_id")
+}
