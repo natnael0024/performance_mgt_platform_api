@@ -50,9 +50,10 @@ model feedbacks {
 }
 
 model levels {
-  id           Int    @id @default(autoincrement())
-  level_name   String @db.VarChar(100)
+  id           Int     @id @default(autoincrement())
+  level_name   String  @db.VarChar(100)
   xp_threshold Int
+  users        users[]
 }
 
 model permissions {
@@ -73,8 +74,8 @@ model progresses {
 
 model role_permission {
   id            Int          @id @default(autoincrement())
-  role_id       Int?
-  permission_id Int?
+  role_id       Int
+  permission_id Int
   roles         roles?       @relation(fields: [role_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "role_permission_ibfk_1")
   permissions   permissions? @relation(fields: [permission_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "role_permission_ibfk_2")
 
@@ -87,6 +88,7 @@ model roles {
   role_name       String            @db.VarChar(255)
   description     String?           @db.VarChar(255)
   role_permission role_permission[]
+  users           users[]
 }
 
 model subscription {
@@ -105,8 +107,9 @@ model targets {
   manager_id                      Int
   member_id                       Int
   target_description              String       @db.VarChar(1000)
+  target_value                    Float?
   duration                        Int
-  status                          Boolean?     @default(false)
+  status                          Int?     @default(1) //1:not started, 2:inprogress, 3:achieved, 0:failed
   feedbacks                       feedbacks[]
   progresses                      progresses[]
   users_targets_manager_idTousers users        @relation("targets_manager_idTousers", fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_target_manager")
@@ -117,14 +120,15 @@ model targets {
 }
 
 model teams {
-  id               Int          @id @default(autoincrement())
-  company_id       Int
-  manager_id       Int
-  team_name        String       @db.VarChar(255)
-  team_description String?      @db.VarChar(255)
-  directions       directions[]
-  companies        companies    @relation(fields: [company_id], references: [id], onUpdate: Restrict, map: "fk_team_company")
-  users            users        @relation(fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_team_manager")
+  id                            Int          @id @default(autoincrement())
+  company_id                    Int
+  manager_id                    Int
+  team_name                     String       @db.VarChar(255)
+  team_description              String?      @db.VarChar(255)
+  directions                    directions[]
+  companies                     companies    @relation(fields: [company_id], references: [id], onUpdate: Restrict, map: "fk_team_company")
+  users_teams_manager_idTousers users        @relation("teams_manager_idTousers", fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_team_manager")
+  users_users_team_idToteams    users[]      @relation("users_team_idToteams")
 
   @@index([company_id], map: "idx_teams_company_id")
   @@index([manager_id], map: "idx_teams_manager_id")
@@ -132,11 +136,11 @@ model teams {
 
 model users {
   id                                    Int          @id @default(autoincrement())
-  company_id                            Int?
-  first_name                            String?      @db.VarChar(255)
-  last_name                             String?      @db.VarChar(255)
-  email                                 String?      @db.VarChar(255)
-  password                              String?      @db.VarChar(255)
+  company_id                            Int
+  first_name                            String      @db.VarChar(255)
+  last_name                             String      @db.VarChar(255)
+  email                                 String      @db.VarChar(255) @unique
+  password                              String      @db.VarChar(255)
   role_id                               Int
   team_id                               Int?
   level_id                              Int?         @default(1)
@@ -147,8 +151,14 @@ model users {
   feedbacks_feedbacks_member_idTousers  feedbacks[]  @relation("feedbacks_member_idTousers")
   targets_targets_manager_idTousers     targets[]    @relation("targets_manager_idTousers")
   targets_targets_member_idTousers      targets[]    @relation("targets_member_idTousers")
-  teams                                 teams[]
+  teams_teams_manager_idTousers         teams[]      @relation("teams_manager_idTousers")
+  levels                                levels?      @relation(fields: [level_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_user_level")
+  roles                                 roles        @relation(fields: [role_id], references: [id], onUpdate: Restrict, map: "fk_user_role")
+  teams_users_team_idToteams            teams?       @relation("users_team_idToteams", fields: [team_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_user_team")
   companies                             companies?   @relation(fields: [company_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_users_company")
 
+  @@index([level_id], map: "fk_user_level")
+  @@index([role_id], map: "fk_user_role")
+  @@index([team_id], map: "fk_user_team")
   @@index([company_id], map: "idx_users_company_id")
 }
