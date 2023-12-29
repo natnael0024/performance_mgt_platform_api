@@ -22,8 +22,8 @@ export default {
         if(first_name == "" || last_name == "" || email =="" || password==""||role_id==""){
             return res.status(400).json({message:'these fields are required'})
         }
-        if( role_id == 2 && team_id == null){
-            return res.status(400).json({message:'Team value can not be empty for team member'})
+        if(  role_id == 2 && team_id == null){
+            return res.status(400).json({message:'Team value can not be empty for team member and manager'})
         }
         const userExists = await prisma.users.findFirst({
             where:{

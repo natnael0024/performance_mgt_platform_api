@@ -41,44 +41,32 @@ export default {
 
     update: asyncHandler(async(req,res,next)=>{
         try{
-            //check if user is manager
-            // find target
-            const token = req.headers.token
-            jwt.verify(token,jwtsec,async(err,userInfo)=>{
-                if(err){
-                    return res.status(403).json({message:'Invalid token'})
+            const id = parseInt(req.params.id)
+            let target = await prisma.targets.findFirst({
+                where:{
+                    id: id
                 }
-                const {userId,roleId} = userInfo
-                if(roleId !==1){
-                    return res.status(403).json({message:'unauthorized'})
-                }
-                const id = parseInt(req.params.id)
-                let target = await prisma.targets.findFirst({
-                    where:{
-                        id: id
-                    }
-                })
-                if(!target){
-                    return res.status(404).json({message: 'target not found'})
-                }
-                //check if user created the target
-                if(target.manager_id !== userId){
-                    return res.status(403).json({message:'unauthorized'})
-                }
-                const {target_description,duration,target_value, member_id} = req.body
-                 target = await prisma.targets.update({
-                    where:{
-                        id:id
-                    },
-                    data:{
-                        target_description,
-                        member_id,
-                        target_value,
-                        duration
-                    }
-                })
-                res.status(200).json({target})
             })
+            if(!target){
+                return res.status(404).json({message: 'target not found'})
+            }
+            //check if user created the target
+            if(target.manager_id !== userId){
+                return res.status(403).json({message:'unauthorized'})
+            }
+            const {target_description,duration,target_value, member_id} = req.body
+             target = await prisma.targets.update({
+                where:{
+                    id:id
+                },
+                data:{
+                    target_description,
+                    member_id,
+                    target_value,
+                    duration
+                }
+            })
+            res.status(200).json({target})
         }catch(err){
             next(err)
         }
@@ -112,34 +100,47 @@ export default {
     updateStatus:asyncHandler(async(req,res,next)=>{
         try{
             //check if user is team_member
-            const token = req.headers.token
+            const id = parseInt(req.params.id) //target id
+            const status = req.body.status
+            const target = await prisma.targets.update({
+                where:{
+                    id: id,
+                    member_id: userId
+                },
+                data:{
+                    status: status
+                }
+            })
+            if(!target){
+                return res.status(404).json({message:'target not found'})
+            }
+            res.status(200).json({target})
+        }catch(err){
+            next(err)
+        }
+    }),
+
+    updateManagerApproval: asyncHandler(async(req,res,next)=>{
+        const token = req.headers.token
             jwt.verify(token,jwtsec,async(err,userInfo)=>{
                 if(err){
                     return res.status(403).json({message: 'inavalid token'})
                 }
                 const {userId,roleId} = userInfo
 
-                if(roleId !== 2){
+                const manager = await prisma.users.findFirst({
+                    where:{
+                        id: userId
+                    }
+                })
+
+                // if(manager.team_id == )
+
+                if(roleId !== 1){
                     return res.status(403).json({message:'unauthorized'})
                 }
                 const id = parseInt(req.params.id) //target id
-                const status = req.body.status
-                const target = await prisma.targets.update({
-                    where:{
-                        id: id,
-                        member_id: userId
-                    },
-                    data:{
-                        status: status
-                    }
-                })
-                if(!target){
-                    return res.status(404).json({message:'target not found'})
-                }
-                res.status(200).json({target})
-            })
-        }catch(err){
-            next(err)
-        }
+
+        })
     })
 }

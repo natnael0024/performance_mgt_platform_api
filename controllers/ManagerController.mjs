@@ -7,7 +7,6 @@ export default {
     getCompanyManagers: asyncHandler(async(req,res,next)=>{
         try{
             const companyId = req.params.id
-            
         }catch(err){
             next(err)
         }

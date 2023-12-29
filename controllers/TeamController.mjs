@@ -49,21 +49,11 @@ export default {
 
     create: asyncHandler(async(req,res,next)=>{
         try{
-            const token = req.headers.token
-            jwt.verify(token,jwtsec,async(err,userInfo)=>{
-                if(err){
-                    return res.status(403).json({message:'Invalid token'})
-                }
-                const {userId,roleId,companyId} = userInfo
-                //check if user is CEO (role 3)
-                if(roleId !==3){
-                    return res.status(403).json({message:'You are unauthorized'})
-                }
-                const { manager_id,team_name,team_description} = req.body
-                if( manager_id == "", team_name==""){
-                return res.status(400).json({message: 'these fields are required'})
-                }
-
+            const { manager_id,team_name,team_description} = req.body
+            if( manager_id == "", team_name==""){
+            return res.status(400).json({message: 'these fields are required'})
+            }
+            //create the team
             const team = await prisma.teams.create({
                 data:{
                     company_id:companyId,
@@ -72,8 +62,16 @@ export default {
                     team_description
                 }
             })
-            res.status(201).json({team})
-            }) 
+            //update the manager set team_id 
+            const manager = await prisma.users.update({
+                where:{
+                    id:manager_id
+                },
+                data:{
+                    team_id: team.id
+                }
+            })
+            res.status(201).json({team}) 
 
         }catch(err){
             next(err)
@@ -96,5 +94,4 @@ export default {
             next(err)
         }
     })
-
 }
