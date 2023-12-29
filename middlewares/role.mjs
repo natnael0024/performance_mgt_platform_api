@@ -11,6 +11,7 @@ export const ceo = asyncHandler(async(req,res,next)=>{
                 return res.status(403).json({message:'Invalid token'})
             }
             const {userId,roleId,companyId} = userInfo
+            req.companyId = companyId
             //check if user is CEO (role 3)
             if(roleId !==3){
                 return res.status(403).json({message:'You are unauthorized'})

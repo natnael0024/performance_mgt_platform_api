@@ -14,12 +14,12 @@ export default {
                 if(err){
                     return res.status(403).json({message:'Invalid token'})
                 }
-                const {userId,roleId} = userInfo
+                const {userId,roleId,teamId} = userInfo
                 if (roleId != 1){
                     return res.status(403).json({message: 'Only managers can set target'})
                 }
                 const {member_id,target_description,target_value,duration,}= req.body
-                if( member_id == "" || target_description == "" || duration == ""){
+                if( member_id == null || target_description == null || duration == null){
                    return res.status(400).json({message:'These fields are required'}) 
                 }
 
@@ -29,6 +29,7 @@ export default {
                         member_id,
                         target_description,
                         target_value,
+                        team_id:teamId,
                         duration
                     }
                 })
@@ -127,20 +128,35 @@ export default {
                     return res.status(403).json({message: 'inavalid token'})
                 }
                 const {userId,roleId} = userInfo
-
+                
+                if(roleId !== 1){
+                    return res.status(403).json({message:'unauthorized'})
+                }
                 const manager = await prisma.users.findFirst({
                     where:{
                         id: userId
                     }
                 })
+                const id = parseInt(req.params.id)
+                let target = await prisma.targets.findFirst({
+                    where:{
+                        id:id
+                    }
+                })
 
-                // if(manager.team_id == )
-
-                if(roleId !== 1){
-                    return res.status(403).json({message:'unauthorized'})
+                if(manager.team_id !== target.team_id){
+                    return res.status(403).json({message:'Manager can only approve his team\'s targets'})
                 }
-                const id = parseInt(req.params.id) //target id
-
+                const {manager_approval} = req.body
+                target = await prisma.targets.update({
+                    where:{
+                        id:id
+                    },
+                    data:{
+                    manager_approval
+                   }
+                })
+                res.status(200).json({target})
         })
     })
 }

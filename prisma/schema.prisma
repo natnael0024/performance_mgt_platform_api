@@ -117,6 +117,7 @@ model targets {
   id                              Int          @id @default(autoincrement())
   manager_id                      Int
   member_id                       Int
+  team_id                         Int?
   target_description              String       @db.VarChar(1000)
   duration                        Int
   target_value                    Float?       @db.Float
@@ -128,9 +129,11 @@ model targets {
   progresses                      progresses[]
   users_targets_manager_idTousers users        @relation("targets_manager_idTousers", fields: [manager_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_target_manager")
   users_targets_member_idTousers  users        @relation("targets_member_idTousers", fields: [member_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_target_member")
+  teams                           teams?       @relation(fields: [team_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_target_team")
 
   @@index([manager_id], map: "idx_targets_manager_id")
   @@index([member_id], map: "idx_targets_member_id")
+  @@index([team_id], map: "fk_target_team")
 }
 
 model teams {
@@ -144,6 +147,7 @@ model teams {
   created_at                    DateTime     @default(now()) @db.Timestamp(0)
   updated_at                    DateTime     @default(now()) @db.Timestamp(0)
   directions                    directions[]
+  targets                       targets[]
   companies                     companies    @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_team_company")
   levels                        levels?      @relation(fields: [level_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_team_level")
   users_teams_manager_idTousers users?       @relation("teams_manager_idTousers", fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_team_manager")

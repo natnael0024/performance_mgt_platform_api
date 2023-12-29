@@ -56,7 +56,7 @@ export default {
             //create the team
             const team = await prisma.teams.create({
                 data:{
-                    company_id:companyId,
+                    company_id:req.companyId,
                     manager_id,
                     team_name,
                     team_description

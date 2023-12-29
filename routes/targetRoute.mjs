@@ -16,5 +16,9 @@ routes.get('/my',auth,TargetController.getAssignedTargets)
 //update status for team member
 routes.post('/my/:id/update',teamMember,TargetController.updateStatus)
 
+//manager approval
+routes.post('/:id/approval',manager,TargetController.updateManagerApproval)
+
+
 
 export default routes

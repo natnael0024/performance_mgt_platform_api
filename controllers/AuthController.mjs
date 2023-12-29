@@ -71,12 +71,15 @@ export default {
             if(!passMatch){
                 return res.status(403).json({message:'Incorrect password'})
             }
+            
             else{
+                const teamid = user.team_id ? user.team_id : null
                 const token = jwt.sign({ 
-                    userId: user.id, 
+                    userId: user.id,
                     email: user.email,
                     roleId: user.role_id,
-                    companyId:user.company_id
+                    companyId:user.company_id,
+                    teamId: teamid
                 }, 
                 jwtsec,
                 {
