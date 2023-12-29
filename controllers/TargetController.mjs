@@ -93,7 +93,7 @@ export default {
                 }
 
                 const {userId,roleId} = userInfo
-                
+
                 const assignedTargets = await prisma.targets.findMany({
                     where:{
                         member_id:userId
@@ -122,8 +122,8 @@ export default {
                 if(roleId !== 2){
                     return res.status(403).json({message:'unauthorized'})
                 }
-                const {id} = req.params.id //target id
-                const status = req.body.status 
+                const id = parseInt(req.params.id) //target id
+                const status = req.body.status
                 const target = await prisma.targets.update({
                     where:{
                         id: id,
@@ -136,6 +136,7 @@ export default {
                 if(!target){
                     return res.status(404).json({message:'target not found'})
                 }
+                res.status(200).json({target})
             })
         }catch(err){
             next(err)

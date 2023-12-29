@@ -121,6 +121,7 @@ model targets {
   duration                        Int
   target_value                    Float?       @db.Float
   status                          Boolean?     @default(false)
+  manager_approval                Boolean      @default(false)
   created_at                      DateTime     @default(now()) @db.Timestamp(0)
   updated_at                      DateTime     @default(now()) @db.Timestamp(0)
   feedbacks                       feedbacks[]
