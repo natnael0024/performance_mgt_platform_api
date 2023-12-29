@@ -1,23 +1,80 @@
 import asyncHandler from 'express-async-handler'
 import {PrismaClient} from '@prisma/client'
+import jwt from 'jsonwebtoken'
 const prisma = new PrismaClient()
 
+const jwtsec = process.env.JWT_SEC
+
 export default {
+    getTeamMembers: asyncHandler(async(req,res,next)=>{
+        try{
+            const teamId = req.params.id
+            const teamMembers = await prisma.users.findMany({
+                where:{
+                    team_id: teamId,
+                    role_id: 2
+                },
+                select:{
+                    id: true,
+                    first_name: true,
+                    last_name:true,
+                    image:true
+                }
+            })
+            if(teamMembers.length == 0){
+                return res.status(404).json({message:'No team members in this company'})
+            }
+            res.status(200).json({teamMembers})
+        }catch(err){
+            next(err)
+        }
+    }),
+
+    getMemberTarget: asyncHandler(async(req,res,next)=>{
+        const {id} = req.params.id //team member id
+        try{
+            const target = await prisma.targets.findUnique({
+                where:{
+                    member_id:id
+                }
+            })
+            if(!target){
+                return res.status(404).json({message:'target not found'})
+            }
+            res.status(200),json({target})
+        }catch(err){
+            next(err)
+        }
+    }),
+
     create: asyncHandler(async(req,res,next)=>{
         try{
-            const {company_id, manager_id,team_name,team_description} = req.body
-            if(company_id == "" || manager_id == "", team_name==""){
+            const token = req.headers.token
+            jwt.verify(token,jwtsec,async(err,userInfo)=>{
+                if(err){
+                    return res.status(403).json({message:'Invalid token'})
+                }
+                const {userId,roleId,companyId} = userInfo
+                //check if user is CEO (role 3)
+                if(roleId !==3){
+                    return res.status(403).json({message:'You are unauthorized'})
+                }
+                const { manager_id,team_name,team_description} = req.body
+                if( manager_id == "", team_name==""){
                 return res.status(400).json({message: 'these fields are required'})
-            }
+                }
+
             const team = await prisma.teams.create({
                 data:{
-                    company_id,
+                    company_id:companyId,
                     manager_id,
                     team_name,
                     team_description
                 }
             })
             res.status(201).json({team})
+            }) 
+
         }catch(err){
             next(err)
         }

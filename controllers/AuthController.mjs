@@ -22,6 +22,17 @@ export default {
         if(first_name == "" || last_name == "" || email =="" || password==""||role_id==""){
             return res.status(400).json({message:'these fields are required'})
         }
+        if( role_id == 2 && team_id == null){
+            return res.status(400).json({message:'Team value can not be empty for team member'})
+        }
+        const userExists = await prisma.users.findFirst({
+            where:{
+                email:email
+            }
+        })
+        if(userExists){
+            return res.status(400).json({message:'A user with this email already exists'})
+        }
         password = await bcrypt.hash(password,10)
         const user = await prisma.users.create({
             data:{
@@ -64,7 +75,8 @@ export default {
                 const token = jwt.sign({ 
                     userId: user.id, 
                     email: user.email,
-                    roleId: user.role_id
+                    roleId: user.role_id,
+                    companyId:user.company_id
                 }, 
                 jwtsec,
                 {

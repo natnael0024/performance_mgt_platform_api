@@ -12,6 +12,8 @@ model companies {
   company_name String         @db.VarChar(255)
   moto         String?        @db.VarChar(255)
   logo         String?        @db.VarChar(255)
+  created_at   DateTime       @default(now()) @db.Timestamp(0)
+  updated_at   DateTime       @default(now()) @db.Timestamp(0)
   directions   directions[]
   subscription subscription[]
   teams        teams[]
@@ -25,9 +27,11 @@ model directions {
   team_id    Int
   title      String    @db.VarChar(255)
   details    String    @db.VarChar(1000)
-  users      users     @relation(fields: [ceo_id], references: [id], onUpdate: Restrict, map: "fk_direction_ceo")
-  companies  companies @relation(fields: [company_id], references: [id], onUpdate: Restrict, map: "fk_direction_company")
-  teams      teams     @relation(fields: [team_id], references: [id], onUpdate: Restrict, map: "fk_direction_team")
+  created_at DateTime  @default(now()) @db.Timestamp(0)
+  updated_at DateTime  @default(now()) @db.Timestamp(0)
+  users      users     @relation(fields: [ceo_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_direction_ceo")
+  companies  companies @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_direction_company")
+  teams      teams     @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_direction_team")
 
   @@index([ceo_id], map: "fk_direction_ceo")
   @@index([company_id], map: "fk_direction_company")
@@ -35,14 +39,16 @@ model directions {
 }
 
 model feedbacks {
-  id                                Int     @id @default(autoincrement())
+  id                                Int      @id @default(autoincrement())
   manager_id                        Int
   member_id                         Int
   target_id                         Int
-  feedback_text                     String  @db.VarChar(500)
-  users_feedbacks_manager_idTousers users   @relation("feedbacks_manager_idTousers", fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_feedback_manager")
-  users_feedbacks_member_idTousers  users   @relation("feedbacks_member_idTousers", fields: [member_id], references: [id], onUpdate: Restrict, map: "fk_feedback_member")
-  targets                           targets @relation(fields: [target_id], references: [id], onUpdate: Restrict, map: "fk_feedback_target")
+  feedback_text                     String   @db.VarChar(500)
+  created_at                        DateTime @default(now()) @db.Timestamp(0)
+  updated_at                        DateTime @default(now()) @db.Timestamp(0)
+  users_feedbacks_manager_idTousers users    @relation("feedbacks_manager_idTousers", fields: [manager_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_feedback_manager")
+  users_feedbacks_member_idTousers  users    @relation("feedbacks_member_idTousers", fields: [member_id], references: [id], onUpdate: Restrict, map: "fk_feedback_member")
+  targets                           targets  @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_feedback_target")
 
   @@index([manager_id], map: "idx_feedbacks_manager_id")
   @@index([member_id], map: "idx_feedbacks_member_id")
@@ -53,6 +59,7 @@ model levels {
   id           Int     @id @default(autoincrement())
   level_name   String  @db.VarChar(100)
   xp_threshold Int
+  teams        teams[]
   users        users[]
 }
 
@@ -64,18 +71,20 @@ model permissions {
 }
 
 model progresses {
-  id             Int     @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   target_id      Int
-  progress_value Int?    @default(0)
-  targets        targets @relation(fields: [target_id], references: [id], onUpdate: Restrict, map: "fk_progress_target")
+  progress_value Int?     @default(0)
+  created_at     DateTime @default(now()) @db.Timestamp(0)
+  updated_at     DateTime @default(now()) @db.Timestamp(0)
+  targets        targets  @relation(fields: [target_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_progress_target")
 
   @@index([target_id], map: "idx_progresses_target_id")
 }
 
 model role_permission {
   id            Int          @id @default(autoincrement())
-  role_id       Int
-  permission_id Int
+  role_id       Int?
+  permission_id Int?
   roles         roles?       @relation(fields: [role_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "role_permission_ibfk_1")
   permissions   permissions? @relation(fields: [permission_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "role_permission_ibfk_2")
 
@@ -97,7 +106,9 @@ model subscription {
   start_date DateTime  @db.Date
   end_date   DateTime  @db.Date
   status     Boolean?  @default(false)
-  companies  companies @relation(fields: [company_id], references: [id], onUpdate: Restrict, map: "fk_subscription_company")
+  created_at DateTime  @default(now()) @db.Timestamp(0)
+  updated_at DateTime  @default(now()) @db.Timestamp(0)
+  companies  companies @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_subscription_company")
 
   @@index([company_id], map: "idx_subscription_company_id")
 }
@@ -107,13 +118,15 @@ model targets {
   manager_id                      Int
   member_id                       Int
   target_description              String       @db.VarChar(1000)
-  target_value                    Float?
   duration                        Int
-  status                          Int?     @default(1) //1:not started, 2:inprogress, 3:achieved, 0:failed
+  target_value                    Float?       @db.Float
+  status                          Boolean?     @default(false)
+  created_at                      DateTime     @default(now()) @db.Timestamp(0)
+  updated_at                      DateTime     @default(now()) @db.Timestamp(0)
   feedbacks                       feedbacks[]
   progresses                      progresses[]
-  users_targets_manager_idTousers users        @relation("targets_manager_idTousers", fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_target_manager")
-  users_targets_member_idTousers  users        @relation("targets_member_idTousers", fields: [member_id], references: [id], onUpdate: Restrict, map: "fk_target_member")
+  users_targets_manager_idTousers users        @relation("targets_manager_idTousers", fields: [manager_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_target_manager")
+  users_targets_member_idTousers  users        @relation("targets_member_idTousers", fields: [member_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_target_member")
 
   @@index([manager_id], map: "idx_targets_manager_id")
   @@index([member_id], map: "idx_targets_member_id")
@@ -122,30 +135,38 @@ model targets {
 model teams {
   id                            Int          @id @default(autoincrement())
   company_id                    Int
-  manager_id                    Int
+  manager_id                    Int?
   team_name                     String       @db.VarChar(255)
   team_description              String?      @db.VarChar(255)
+  xp                            Int?         @default(1)
+  level_id                      Int?         @default(1)
+  created_at                    DateTime     @default(now()) @db.Timestamp(0)
+  updated_at                    DateTime     @default(now()) @db.Timestamp(0)
   directions                    directions[]
-  companies                     companies    @relation(fields: [company_id], references: [id], onUpdate: Restrict, map: "fk_team_company")
-  users_teams_manager_idTousers users        @relation("teams_manager_idTousers", fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_team_manager")
+  companies                     companies    @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_team_company")
+  levels                        levels?      @relation(fields: [level_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_team_level")
+  users_teams_manager_idTousers users?       @relation("teams_manager_idTousers", fields: [manager_id], references: [id], onUpdate: Restrict, map: "fk_team_manager")
   users_users_team_idToteams    users[]      @relation("users_team_idToteams")
 
   @@index([company_id], map: "idx_teams_company_id")
   @@index([manager_id], map: "idx_teams_manager_id")
+  @@index([level_id], map: "fk_team_level")
 }
 
 model users {
   id                                    Int          @id @default(autoincrement())
-  company_id                            Int
-  first_name                            String      @db.VarChar(255)
-  last_name                             String      @db.VarChar(255)
-  email                                 String      @db.VarChar(255) @unique
-  password                              String      @db.VarChar(255)
-  role_id                               Int
+  company_id                            Int?
+  first_name                            String?      @db.VarChar(255)
+  last_name                             String?      @db.VarChar(255)
+  email                                 String?      @db.VarChar(255)
+  password                              String?      @db.VarChar(255)
+  role_id                               Int          @default(2)
   team_id                               Int?
   level_id                              Int?         @default(1)
   xp                                    Int?         @default(0)
   image                                 String?      @db.VarChar(255)
+  created_at                            DateTime     @default(now()) @db.Timestamp(0)
+  updated_at                            DateTime     @default(now()) @db.Timestamp(0)
   directions                            directions[]
   feedbacks_feedbacks_manager_idTousers feedbacks[]  @relation("feedbacks_manager_idTousers")
   feedbacks_feedbacks_member_idTousers  feedbacks[]  @relation("feedbacks_member_idTousers")
@@ -154,7 +175,7 @@ model users {
   teams_teams_manager_idTousers         teams[]      @relation("teams_manager_idTousers")
   levels                                levels?      @relation(fields: [level_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_user_level")
   roles                                 roles        @relation(fields: [role_id], references: [id], onUpdate: Restrict, map: "fk_user_role")
-  teams_users_team_idToteams            teams?       @relation("users_team_idToteams", fields: [team_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_user_team")
+  teams_users_team_idToteams            teams?       @relation("users_team_idToteams", fields: [team_id], references: [id], onUpdate: Restrict, map: "fk_user_team")
   companies                             companies?   @relation(fields: [company_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_users_company")
 
   @@index([level_id], map: "fk_user_level")

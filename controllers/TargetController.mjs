@@ -8,7 +8,6 @@ const jwtsec = process.env.JWT_SEC
 export default {
     create: asyncHandler(async(req,res,next)=>{
         try{
-            //verify token
             const token = req.headers.token
             
             jwt.verify(token,jwtsec,async(err,userInfo)=>{
@@ -19,58 +18,92 @@ export default {
                 if (roleId != 1){
                     return res.status(403).json({message: 'Only managers can set target'})
                 }
-                const {member_id,target_description,duration}= req.body
+                const {member_id,target_description,target_value,duration,}= req.body
                 if( member_id == "" || target_description == "" || duration == ""){
                    return res.status(400).json({message:'These fields are required'}) 
                 }
+
                 const target = await prisma.targets.create({
                     data:{
                         manager_id:userId,
                         member_id,
                         target_description,
+                        target_value,
                         duration
                     }
                 })
                 res.status(201).json({target})
             })
-            
         }catch(err){
             next(err)
         }
     }),
+
     update: asyncHandler(async(req,res,next)=>{
         try{
             //check if user is manager
             // find target
-            const {id} = req.params.id
-            const target = await prisma.targets.delete({
-                where:{
-                    id: id
+            const token = req.headers.token
+            jwt.verify(token,jwtsec,async(err,userInfo)=>{
+                if(err){
+                    return res.status(403).json({message:'Invalid token'})
                 }
+                const {userId,roleId} = userInfo
+                if(roleId !==1){
+                    return res.status(403).json({message:'unauthorized'})
+                }
+                const id = parseInt(req.params.id)
+                let target = await prisma.targets.findFirst({
+                    where:{
+                        id: id
+                    }
+                })
+                if(!target){
+                    return res.status(404).json({message: 'target not found'})
+                }
+                //check if user created the target
+                if(target.manager_id !== userId){
+                    return res.status(403).json({message:'unauthorized'})
+                }
+                const {target_description,duration,target_value, member_id} = req.body
+                 target = await prisma.targets.update({
+                    where:{
+                        id:id
+                    },
+                    data:{
+                        target_description,
+                        member_id,
+                        target_value,
+                        duration
+                    }
+                })
+                res.status(200).json({target})
             })
-            if(!target){
-                return res.status(404).json({message: 'target not found'})
-            }
-            //check if user created the target
-            res.status(200).json({message:'target deleted'})
-
         }catch(err){
             next(err)
         }
     }),
 
-    get: asyncHandler(async(req,res,next)=>{
-        const {id} = req.params.id
+    getAssignedTargets: asyncHandler(async(req,res,next)=>{
         try{
-            const target = await prisma.targets.findUnique({
-                where:{
-                    id:id
+            const token = req.headers.token
+            jwt.verify(token,jwtsec,async(err,userInfo)=>{
+                if(err){
+                    return res.status(403).json({message: 'inavalid token'})
                 }
+
+                const {userId,roleId} = userInfo
+                
+                const assignedTargets = await prisma.targets.findMany({
+                    where:{
+                        member_id:userId
+                    }
+                })
+                if(assignedTargets.length == 0){
+                    return res.status(404).json({message:'You\'ve no assignedTargets'})
+                }
+                res.status(200).json({assignedTargets})
             })
-            if(!target){
-                return res.status(404).json({message:'target not found'})
-            }
-            res.status(200),json({target})
         }catch(err){
             next(err)
         }
@@ -79,20 +112,31 @@ export default {
     updateStatus:asyncHandler(async(req,res,next)=>{
         try{
             //check if user is team_member
-            //find target ,check if the auth user_id == target.member_id
-            const {id} = req.params.id
-            const status = req.body.status
-            const target = await prisma.targets.update({
-                where:{
-                    id: id
-                },
-                data:{
-                    status: status
+            const token = req.headers.token
+            jwt.verify(token,jwtsec,async(err,userInfo)=>{
+                if(err){
+                    return res.status(403).json({message: 'inavalid token'})
+                }
+                const {userId,roleId} = userInfo
+
+                if(roleId !== 2){
+                    return res.status(403).json({message:'unauthorized'})
+                }
+                const {id} = req.params.id //target id
+                const status = req.body.status 
+                const target = await prisma.targets.update({
+                    where:{
+                        id: id,
+                        member_id: userId
+                    },
+                    data:{
+                        status: status
+                    }
+                })
+                if(!target){
+                    return res.status(404).json({message:'target not found'})
                 }
             })
-            if(!target){
-                return res.status(404).json({message:'target not found'})
-            }
         }catch(err){
             next(err)
         }

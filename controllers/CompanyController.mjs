@@ -22,4 +22,53 @@ export default {
             next(error)
         }
     }),
+
+    getCompanyManagers: asyncHandler(async(req,res,next)=>{
+        try{
+            const companyId = req.params.id
+            const managers = await prisma.users.findMany({
+                where:{
+                    company_id: parseInt(companyId),
+                    role_id: 1
+                },
+                select:{
+                    id: true,
+                    first_name: true,
+                    last_name:true,
+                    image:true
+                }
+            })
+            if(managers.length == 0){
+                return res.status(404).json({message: 'No managers in this company'})
+            }
+            res.status(200).json({managers})
+        }catch(err){
+            next(err)
+        }
+    }),
+
+    getCompanyTeamMembers: asyncHandler(async(req,res,next)=>{
+        try{
+            const companyId = req.params.id
+            const teamMembers = await prisma.users.findMany({
+                where:{
+                    company_id: companyId,
+                    role_id: 2
+                },
+                select:{
+                    id: true,
+                    first_name: true,
+                    last_name:true,
+                    image:true
+                }
+            })
+            if(teamMembers.length == 0){
+                return res.status(404).json({message:'No team members in this company'})
+            }
+            
+            res.status(200).json({teamMembers})
+        }catch(err){
+            next(err)
+        }
+    })
 }
