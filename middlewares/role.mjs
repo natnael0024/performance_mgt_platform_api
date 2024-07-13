@@ -12,6 +12,7 @@ export const ceo = asyncHandler(async(req,res,next)=>{
             }
             const {userId,roleId,companyId} = userInfo
             req.companyId = companyId
+            req.ceoId = userId
             //check if user is CEO (role 3)
             if(roleId !==3){
                 return res.status(403).json({message:'You are unauthorized'})
@@ -30,11 +31,13 @@ export const manager = asyncHandler(async(req,res,next)=>{
             if(err){
                 return res.status(403).json({message:'Invalid token'})
             }
-            const {userId,roleId,companyId} = userInfo
+            const {userId,roleId,companyId,teamId} = userInfo
             //check if user is manager (role 1)
             if(roleId !==1){
                 return res.status(403).json({message:'You are unauthorized'})
             }
+            req.userId = userId
+            req.teamId = teamId 
             next()
         })
     }catch(err){
@@ -54,6 +57,7 @@ export const teamMember = asyncHandler(async(req,res,next)=>{
             if(roleId !==2){
                 return res.status(403).json({message:'You are unauthorized'})
             }
+            req.memberId = userId
             next()
         })
     }catch(err){

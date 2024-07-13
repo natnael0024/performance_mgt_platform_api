@@ -29,6 +29,38 @@ export default {
             next(err)
         }
     }),
+//for manager
+    getTeamMembersManager:  asyncHandler(async(req,res,next)=>{
+        try{
+            const managerId = req.userId
+            const manager = await prisma.users.findUnique({
+                where:{
+                    id: managerId
+                }
+            })
+            const teamid =  manager.team_id
+            
+            const teamMembers = await prisma.users.findMany({
+                where:{
+                    team_id: teamid,
+                    role_id: 2
+                },
+                include:{
+                    progresses:{
+                        include:{
+                            targets:true
+                        }
+                    }
+                }
+            })
+            if(teamMembers.length == 0){
+                return res.status(404).json({message:'Team has no members'})
+            }
+            res.status(200).json({teamMembers})
+        }catch(err){
+            next(err)
+        }
+    }),
 
     getMemberTarget: asyncHandler(async(req,res,next)=>{
         const {id} = req.params.id //team member id
@@ -53,6 +85,15 @@ export default {
             if( manager_id == "", team_name==""){
             return res.status(400).json({message: 'these fields are required'})
             }
+            //check if manager is not already assigned
+            let manager = await prisma.users.findUnique({
+                where:{
+                    id : manager_id
+                }
+            })
+            if(manager.team_id !== null){
+                return res.status(400).json({message:'Manager is alreadya ssigned to a team'})
+            }
             //create the team
             const team = await prisma.teams.create({
                 data:{
@@ -62,8 +103,8 @@ export default {
                     team_description
                 }
             })
-            //update the manager set team_id 
-            const manager = await prisma.users.update({
+            //update the manager set team_id
+             manager = await prisma.users.update({
                 where:{
                     id:manager_id
                 },

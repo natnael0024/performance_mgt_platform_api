@@ -5,6 +5,8 @@ import companyRoute from './routes/companyRoute.mjs'
 import authRoute from './routes/authRoute.mjs'
 import teamRoute from './routes/teamRoute.mjs'
 import targetRoute from './routes/targetRoute.mjs'
+import directionRoute from './routes/directionRoute.mjs'
+import progressRoute from './routes/progressRoute.mjs'
 
 
 
@@ -21,3 +23,5 @@ app.use('/v1/companies',companyRoute)
 app.use('/v1/auth',authRoute)
 app.use('/v1/teams',teamRoute)
 app.use('/v1/targets',targetRoute)
+app.use('/v1/directions',directionRoute)
+app.use('/v1/progresses',progressRoute)

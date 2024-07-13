@@ -8,33 +8,37 @@ const jwtsec = process.env.JWT_SEC
 export default {
     create: asyncHandler(async(req,res,next)=>{
         try{
-            const token = req.headers.token
-            
-            jwt.verify(token,jwtsec,async(err,userInfo)=>{
-                if(err){
-                    return res.status(403).json({message:'Invalid token'})
+            const managerTeamId = req.teamId
+            const managerId = req.userId
+            const {member_id,target_description,target_value,duration,}= req.body
+            if( member_id == null || target_description == null || duration == null){
+                return res.status(400).json({message:'These fields are required'}) 
+            }
+            const member = await prisma.users.findUnique({
+                where:{
+                    id:member_id
                 }
-                const {userId,roleId,teamId} = userInfo
-                if (roleId != 1){
-                    return res.status(403).json({message: 'Only managers can set target'})
-                }
-                const {member_id,target_description,target_value,duration,}= req.body
-                if( member_id == null || target_description == null || duration == null){
-                   return res.status(400).json({message:'These fields are required'}) 
-                }
-
-                const target = await prisma.targets.create({
-                    data:{
-                        manager_id:userId,
-                        member_id,
-                        target_description,
-                        target_value,
-                        team_id:teamId,
-                        duration
-                    }
-                })
-                res.status(201).json({target})
             })
+            if(managerTeamId !== member.team_id){
+                return res.status(403).json({message:'You can set targets for your team members only'})
+            }
+            const target = await prisma.targets.create({
+                data:{
+                    manager_id:managerId,
+                    member_id,
+                    target_description,
+                    target_value,
+                    team_id:managerTeamId,
+                    duration
+                }
+            })
+            //initialize a progress with value 0
+            const progress = await prisma.progresses.create({
+                data:{
+                    target_id: target.id
+                }
+            })
+            res.status(201).json({target})
         }catch(err){
             next(err)
         }
