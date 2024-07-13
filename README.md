@@ -7,5 +7,6 @@ The Performance Management Platform (PMP) is a comprehensive software solution d
 * Progress Tracking: Track and assess employee progresses on assigned task, ensuring alignment with job requirements.
 * CEO Directions: Define general direction to managers by CEO.
 * Direction Breakdown: Breakdown the general direction into tasks for team members.
+* Task Completion Scoring: Assign scores to tasks based on completion quality, timeliness, and adherence to guidelines.
 * Reporting and Analytics: Generate insightful reports and dashboards to track progress, identify trends, and make data-driven decisions.
 * Integration with HR Systems: Seamlessly integrate with existing HR systems for streamlined data management and reporting.
